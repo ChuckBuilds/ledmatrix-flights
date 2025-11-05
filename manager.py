@@ -1884,6 +1884,17 @@ class FlightTrackerPlugin(BasePlugin):
             self.logger.error(f"Invalid update_interval: {interval} (must be between 1 and 300)")
             return False
         
+        # Validate FlightAware API key if flight plans are enabled
+        flight_plan_enabled = self.config.get('flight_plan_enabled', False)
+        api_key = self.config.get('flightaware_api_key', '')
+        if flight_plan_enabled and not api_key:
+            self.logger.warning(
+                "Flight plans are enabled but no FlightAware API key is configured. "
+                "Flight plan features will not work. "
+                "Get a free API key at https://flightaware.com/aeroapi/ and add it to config_secrets.json"
+            )
+            # Don't fail validation - just warn, as the plugin can work without flight plans
+        
         return True
 
 

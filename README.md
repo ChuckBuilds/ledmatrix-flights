@@ -62,6 +62,10 @@ Add the following to `config/config.json`:
 
 ### Secrets Configuration
 
+**Option 1: Via Web Interface (Recommended)**
+When configuring the plugin through the LEDMatrix web interface, the `flightaware_api_key` field is automatically saved to `config/config_secrets.json` as a secret. Just enter your API key in the plugin configuration form.
+
+**Option 2: Manual Configuration**
 Add FlightAware API key to `config/config_secrets.json`:
 
 ```json
@@ -71,6 +75,14 @@ Add FlightAware API key to `config/config_secrets.json`:
   }
 }
 ```
+
+**Getting a FlightAware API Key:**
+1. Sign up for a free account at [FlightAware AeroAPI](https://flightaware.com/aeroapi/)
+2. Navigate to your account settings and create an API key
+3. Free tier includes 1,000 requests per month
+4. The API key is only required if you enable `flight_plan_enabled` (for origin/destination information)
+
+**Note:** The plugin will work without an API key for basic aircraft tracking, but flight plan features (origin/destination) will be disabled.
 
 ### Full Configuration Options
 

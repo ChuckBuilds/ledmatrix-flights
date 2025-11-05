@@ -252,6 +252,12 @@
       "description": "Display mode to use",
       "enum": ["map", "overhead", "stats", "auto"],
       "default": "auto"
+    },
+    "flightaware_api_key": {
+      "type": "string",
+      "description": "FlightAware AeroAPI key (required if flight_plan_enabled is true). Get your free API key at https://flightaware.com/aeroapi/",
+      "x-secret": true,
+      "default": ""
     }
   },
   "required": ["enabled"],
