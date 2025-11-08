@@ -1397,18 +1397,38 @@ class FlightTrackerPlugin(BasePlugin):
         - 'stats': Statistics view showing closest/fastest/highest aircraft
         - 'auto': Automatically choose based on proximity alerts
         """
+        aircraft_count = len(self.aircraft_data)
+        closest = self.get_closest_aircraft()
+        self.logger.debug(
+            "[Flight Tracker] display() called: configured_mode=%s, aircraft=%s, proximity_enabled=%s, closest_distance=%s",
+            self.display_mode,
+            aircraft_count,
+            self.proximity_enabled,
+            None if not closest else f"{closest['distance_miles']:.3f}",
+        )
+
         # Determine which mode to use
         mode = self.display_mode
         if mode == 'auto':
-            # Auto mode: use overhead if proximity alert, otherwise stats
+            # Auto mode: prefer map view when aircraft are available, use overhead for proximity alerts.
             if self.proximity_enabled:
-                closest = self.get_closest_aircraft()
                 if closest and closest['distance_miles'] <= self.proximity_distance_miles:
                     mode = 'overhead'
+
+            if mode == 'auto':
+                # Show map when we have aircraft to plot, otherwise fall back to stats.
+                if self.aircraft_data:
+                    mode = 'map'
                 else:
                     mode = 'stats'
-            else:
-                mode = 'stats'
+            self.logger.debug(
+                "[Flight Tracker] Auto mode selection: chosen_mode=%s (aircraft=%s, proximity=%s)",
+                mode,
+                aircraft_count,
+                "triggered" if closest and closest['distance_miles'] <= self.proximity_distance_miles else "inactive",
+            )
+        else:
+            self.logger.debug("[Flight Tracker] Manual mode selection: chosen_mode=%s", mode)
         
         # Route to appropriate display method
         if mode == 'map':
@@ -1434,6 +1454,7 @@ class FlightTrackerPlugin(BasePlugin):
         if map_bg:
             img = map_bg.copy()
         else:
+            self.logger.debug("[Flight Tracker] Map background unavailable; using solid background")
             img = Image.new('RGB', (self.display_width, self.display_height), (0, 0, 0))
         
         draw = ImageDraw.Draw(img)
