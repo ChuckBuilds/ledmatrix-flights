@@ -131,8 +131,9 @@
         },
         "custom_tile_server": {
           "type": "string",
-          "description": "Custom tile server URL (optional, for self-hosted OSM servers)",
-          "pattern": "^https?://.*"
+          "description": "Custom tile server URL (optional, for self-hosted OSM servers). When set, this overrides the tile_provider setting. Leave empty to use the tile_provider setting instead.",
+          "pattern": "^(https?://.*)?$",
+          "default": "https://maps.chuck-builds.com"
         }
       },
       "required": ["enabled", "tile_provider"]
