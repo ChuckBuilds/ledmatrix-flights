@@ -195,20 +195,12 @@ class FlightTrackerPlugin(BasePlugin):
         # Fonts
         self.fonts = self._load_fonts()
         
-        # Initialize offline aircraft database
+        # Initialize offline aircraft database (lazy-loaded on first use for faster startup)
         self.use_offline_db = self.config.get('use_offline_database', True)
         self.aircraft_db = None
-        if self.use_offline_db:
-            try:
-                cache_dir = cache_manager.cache_dir if cache_manager.cache_dir else Path.home() / '.cache' / 'ledmatrix'
-                self.aircraft_db = AircraftDatabase(cache_dir)
-                stats = self.aircraft_db.get_stats()
-                logger.info(f"[Flight Tracker] Offline aircraft database loaded: {stats['total_aircraft']} aircraft, {stats['database_size_mb']:.1f}MB")
-                if stats['last_update']:
-                    logger.info(f"[Flight Tracker] Database last updated: {stats['last_update']}")
-            except Exception as e:
-                logger.warning(f"[Flight Tracker] Failed to load offline aircraft database: {e}")
-                self.aircraft_db = None
+        self.aircraft_db_loaded = False  # Track if we've attempted to load the DB
+        self.aircraft_db_cache_dir = cache_manager.cache_dir if cache_manager.cache_dir else Path.home() / '.cache' / 'ledmatrix'
+        logger.debug("[Flight Tracker] Aircraft database will be lazy-loaded on first use")
         
         logger.info(f"[Flight Tracker] Initialized with center: ({self.center_lat}, {self.center_lon}), radius: {self.map_radius_miles}mi")
         logger.info(f"[Flight Tracker] Display: {self.display_width}x{self.display_height}, SkyAware: {self.skyaware_url}")
@@ -541,6 +533,33 @@ class FlightTrackerPlugin(BasePlugin):
             
             return None
     
+    def _ensure_database_loaded(self) -> None:
+        """Lazy-load the aircraft database on first use.
+        
+        This defers loading the 70MB database until it's actually needed,
+        significantly speeding up plugin initialization.
+        """
+        if self.aircraft_db_loaded:
+            return  # Already attempted to load (successful or not)
+        
+        self.aircraft_db_loaded = True
+        
+        if not self.use_offline_db:
+            logger.debug("[Flight Tracker] Offline database disabled in config")
+            return
+        
+        try:
+            load_start = time.time()
+            self.aircraft_db = AircraftDatabase(self.aircraft_db_cache_dir)
+            load_time = time.time() - load_start
+            stats = self.aircraft_db.get_stats()
+            logger.info(f"[Flight Tracker] Offline aircraft database loaded: {stats['total_aircraft']} aircraft, {stats['database_size_mb']:.1f}MB in {load_time:.2f}s")
+            if stats['last_update']:
+                logger.info(f"[Flight Tracker] Database last updated: {stats['last_update']}")
+        except Exception as e:
+            logger.warning(f"[Flight Tracker] Failed to load offline aircraft database: {e}")
+            self.aircraft_db = None
+    
     def _get_aircraft_info_from_database(self, icao24: str, registration: str = None) -> Optional[Dict]:
         """Get aircraft information from offline database.
         
@@ -551,6 +570,9 @@ class FlightTrackerPlugin(BasePlugin):
         Returns:
             Dictionary with aircraft info or None
         """
+        # Lazy-load database on first use
+        self._ensure_database_loaded()
+        
         if not self.aircraft_db:
             return None
         
