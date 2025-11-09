@@ -326,6 +326,33 @@ class FlightTrackerPlugin(BasePlugin):
             # Use outlined rendering for titles and when explicitly requested
             self._draw_text_with_outline(draw, text, position, font, fill, outline_color)
     
+    def _draw_airplane_icon(self, draw, x: int, y: int, color=(255, 255, 255)):
+        """Draw a simple airplane icon using basic shapes."""
+        # Draw a simple airplane icon (5x5 pixels)
+        # Shape: Simple plane viewed from above
+        #   X      (top - nose)
+        #  XXX     (wings)
+        #   X      (body)
+        #  X X     (tail)
+        
+        # Center pixel (body)
+        draw.point((x + 2, y + 2), fill=color)
+        
+        # Nose
+        draw.point((x + 2, y), fill=color)
+        
+        # Wings
+        draw.point((x + 1, y + 1), fill=color)
+        draw.point((x + 2, y + 1), fill=color)
+        draw.point((x + 3, y + 1), fill=color)
+        
+        # Body
+        draw.point((x + 2, y + 3), fill=color)
+        
+        # Tail
+        draw.point((x + 1, y + 4), fill=color)
+        draw.point((x + 3, y + 4), fill=color)
+    
     def _get_font_height(self, font) -> int:
         """Get the height of a font for proper spacing calculations."""
         try:
