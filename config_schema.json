@@ -205,6 +205,33 @@
       },
       "default": ["AAL", "UAL", "DAL", "SWA", "JBU", "ASQ", "ENY", "FFT", "NKS", "F9", "G4", "B6", "WN", "AA", "UA", "DL"]
     },
+    "background_service": {
+      "type": "object",
+      "description": "Background service configuration for fetching flight plan data without blocking the display",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable the background service for flight plan fetching",
+          "default": true
+        },
+        "fetch_interval_hours": {
+          "type": "integer",
+          "description": "Interval in hours between background fetch runs",
+          "minimum": 1,
+          "maximum": 168,
+          "default": 4
+        },
+        "max_calls_per_run": {
+          "type": "integer",
+          "description": "Maximum number of flight plan calls fetched per background run",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 10
+        }
+      },
+      "required": ["enabled"],
+      "additionalProperties": false
+    },
     "use_offline_database": {
       "type": "boolean",
       "description": "Use offline aircraft database for aircraft type lookups",

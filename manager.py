@@ -197,6 +197,8 @@ class FlightTrackerPlugin(BasePlugin):
         
         # Initialize offline aircraft database (lazy-loaded on first use for faster startup)
         self.use_offline_db = self.config.get('use_offline_database', True)
+        self.offline_db_auto_update = self.config.get('offline_database_auto_update', True)
+        self.offline_db_update_interval_days = self.config.get('offline_database_update_interval_days', 30)
         self.aircraft_db = None
         self.aircraft_db_loaded = False  # Track if we've attempted to load the DB
         self.aircraft_db_cache_dir = cache_manager.cache_dir if cache_manager.cache_dir else Path.home() / '.cache' / 'ledmatrix'
@@ -326,32 +328,52 @@ class FlightTrackerPlugin(BasePlugin):
             # Use outlined rendering for titles and when explicitly requested
             self._draw_text_with_outline(draw, text, position, font, fill, outline_color)
     
-    def _draw_airplane_icon(self, draw, x: int, y: int, color=(255, 255, 255)):
-        """Draw a simple airplane icon using basic shapes."""
-        # Draw a simple airplane icon (5x5 pixels)
-        # Shape: Simple plane viewed from above
-        #   X      (top - nose)
-        #  XXX     (wings)
-        #   X      (body)
-        #  X X     (tail)
-        
-        # Center pixel (body)
-        draw.point((x + 2, y + 2), fill=color)
-        
-        # Nose
-        draw.point((x + 2, y), fill=color)
-        
-        # Wings
-        draw.point((x + 1, y + 1), fill=color)
-        draw.point((x + 2, y + 1), fill=color)
-        draw.point((x + 3, y + 1), fill=color)
-        
-        # Body
-        draw.point((x + 2, y + 3), fill=color)
-        
-        # Tail
-        draw.point((x + 1, y + 4), fill=color)
-        draw.point((x + 3, y + 4), fill=color)
+    def _draw_airplane_icon(
+        self,
+        draw: ImageDraw.Draw,
+        x: int,
+        y: int,
+        color: Tuple[int, int, int] = (200, 200, 200),
+    ) -> None:
+        """Draw a simple airplane icon at the specified position with black outline.
+
+        Args:
+            draw: ImageDraw object to draw on
+            x: X coordinate for the icon's top-left corner
+            y: Y coordinate for the icon's top-left corner
+            color: RGB color tuple for the icon
+        """
+        # Simple 5x5 pixel airplane icon
+        # Format: (relative_x, relative_y)
+        airplane_pixels = [
+            (2, 0),  # Nose
+            (2, 1),  # Body
+            (0, 2), (1, 2), (2, 2), (3, 2), (4, 2),  # Wings
+            (2, 3),  # Body
+            (1, 4), (2, 4), (3, 4),  # Tail
+        ]
+
+        airplane_set = set(airplane_pixels)
+
+        # Draw black outline (all pixels adjacent to airplane pixels)
+        outline_pixels = set()
+        for px, py in airplane_pixels:
+            # Check all 8 surrounding pixels
+            for dx in [-1, 0, 1]:
+                for dy in [-1, 0, 1]:
+                    if dx == 0 and dy == 0:
+                        continue  # Skip the center pixel
+                    neighbor = (px + dx, py + dy)
+                    if neighbor not in airplane_set:
+                        outline_pixels.add(neighbor)
+
+        # Draw outline first
+        for px, py in outline_pixels:
+            draw.point((x + px, y + py), fill=(0, 0, 0))
+
+        # Draw airplane on top
+        for px, py in airplane_pixels:
+            draw.point((x + px, y + py), fill=color)
     
     def _get_font_height(self, font) -> int:
         """Get the height of a font for proper spacing calculations."""
